@@ -30,7 +30,7 @@ export const tools = pgTable("tools", {
   type: varchar("type", { length: 50 }).notNull(),
   provider: varchar("provider", { length: 100 }).notNull(),
 
-  icon: varchar("iocn", { length: 100 }),
+  icon: varchar("icon"),
 
   status: varchar("status", { length: 50 }).default("active"),
 
