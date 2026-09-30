@@ -31,6 +31,9 @@ export const AgentConfigRespSchema = {
               "single_select",
               "multi_select",
               "text",
+              "number",
+              "date",
+              "time"
             ],
           },
 

@@ -1,8 +1,10 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowUp, BarChart3, Bot, BriefcaseBusiness, Code2, Headphones, PenLine, Plus } from "lucide-react"
+import axios from "axios";
+import { ArrowUp, BarChart3, Bot, BriefcaseBusiness, Code2, Headphones, Loader2, Loader2Icon, PenLine, Plus } from "lucide-react"
 import { useState } from "react";
+import AIAgentQuestion from "./AIAgentQuestion";
 
 
 const quickSuggestion = [
@@ -85,10 +87,37 @@ const templates = [
   },
 ]
 
+type AgentConfigResp={
+  statue: 'need_clarification' | 'ready',
+  clearificationQuestions: ClearificationQuestions[],
+  config: any
+}
+
+export type ClearificationQuestions={
+  id: string
+  question: string
+  type: "single_select" | "multi_select" | "text" | "number" | "date" | "time",
+  options: string[],
+  allowCustom: boolean,
+  customPlaceholder: boolean
+}
 
 const CreateAgent = () => {
 
     const [prompt,setPrompt]=useState("");
+    const [configResult,setConfigResult]=useState<AgentConfigResp | null>(null);
+    const [loading,setLoading]=useState(false);
+
+    const OnSubmit=async()=>{
+      setLoading(true);
+      const result=await axios.post('/api/agent/configure',{
+        prompt: prompt
+      })
+
+      console.log(result.data);
+      setConfigResult(result.data);
+      setLoading(false);
+    }
 
   return (
     <div className='mt-5'>
@@ -110,8 +139,8 @@ const CreateAgent = () => {
                     <Plus/>
                 </Button>
             </div>
-            <Button size={'icon'} className={`h-9 w-9 rounded-full bg-purple-900 cursor-pointer`}>
-                <ArrowUp/>
+            <Button disabled={loading} onClick={OnSubmit} size={'icon'} className={`h-9 w-9 rounded-full bg-purple-900 cursor-pointer`}>
+                {loading ? <Loader2 className='animate-spin'/> :  <ArrowUp/>}
             </Button>
         </div>
       </div>
@@ -126,7 +155,13 @@ const CreateAgent = () => {
         ))}
       </div>
 
-       <div className="mt-10">
+
+      { loading ? <div className="flex gap-2 items-center p-5 mt-7 border rounded-xl shadow">
+        <Loader2Icon className="animate-spin"/>
+        <h2>Generating agent Config...</h2>
+      </div>
+        :
+       !configResult && <div className="mt-10">
             <h2 className="flex text-lg justify-between items-center font-semibold">Get Started <span className="text-sm font-medium">View All</span></h2>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mt-3">
@@ -142,7 +177,15 @@ const CreateAgent = () => {
                 ))
               }
             </div>
-        </div> 
+        </div> }
+
+        {configResult &&
+          <div className="p-5 border rounded-2xl">
+            {configResult.statue=="need_clarification" 
+            && <AIAgentQuestion questionList={configResult.clearificationQuestions}/>}
+            <p>{JSON.stringify(configResult)}</p>
+          </div>
+      }
 
     </div>
     )
