@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {GoogleGenAI, ThinkingLevel} from "@google/genai";
 import { AgentConfigSystemPrompt } from "@/data/prompt";
 import { AgentConfigRespSchema } from "@/data/ReponseSchema";
+import { db, tools } from "@/db";
 
 export async function POST(req:NextRequest){
 
@@ -14,11 +15,16 @@ export async function POST(req:NextRequest){
     const apiKey=process.env.GOOGLE_CLOUD_GEMINI_API_KEY;
 
     try {
+
+        const aiTools=await db.select({
+            slug:tools.slug
+        }).from(tools);
+
         const ai=new GoogleGenAI({apiKey});
 
         const response=await ai.models.generateContent({
             model: 'gemini-3.5-flash-lite',
-            contents: AgentConfigSystemPrompt.replace("{USER_PROMPT}", prompt),
+            contents: AgentConfigSystemPrompt.replace("{USER_PROMPT}", prompt).replace("{AVAILABLE_TOOLS}",aiTools.toString()),
             config: {
                 thinkingConfig:{thinkingLevel:ThinkingLevel.MEDIUM},
                 responseMimeType: "application/json",

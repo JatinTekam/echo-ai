@@ -87,19 +87,19 @@ const templates = [
   },
 ]
 
-type AgentConfigResp={
-  statue: 'need_clarification' | 'ready',
-  clearificationQuestions: ClearificationQuestions[],
+type AgentConfigResp = {
+  status: 'needs_clarification' | 'ready',
+  clarificationQuestions: ClearificationQuestions[],
   config: any
 }
 
-export type ClearificationQuestions={
+export type ClearificationQuestions = {
   id: string
   question: string
   type: "single_select" | "multi_select" | "text" | "number" | "date" | "time",
   options: string[],
   allowCustom: boolean,
-  customPlaceholder: boolean
+  customPlaceholder: string
 }
 
 const CreateAgent = () => {
@@ -112,6 +112,21 @@ const CreateAgent = () => {
       setLoading(true);
       const result=await axios.post('/api/agent/configure',{
         prompt: prompt
+      })
+
+      console.log(result.data);
+      setConfigResult(result.data);
+      setLoading(false);
+    }
+
+    const onComplete=async(resp:any)=>{
+      console.log("OnComplete",resp);
+      setConfigResult(null);
+      const updatedPrompt=prompt+ "/n"+ JSON.stringify(resp);
+
+       setLoading(true);
+      const result=await axios.post('/api/agent/configure',{
+        prompt: updatedPrompt
       })
 
       console.log(result.data);
@@ -180,12 +195,16 @@ const CreateAgent = () => {
         </div> }
 
         {configResult &&
-          <div className="p-5 border rounded-2xl">
-            {configResult.statue=="need_clarification" 
-            && <AIAgentQuestion questionList={configResult.clearificationQuestions}/>}
-            <p>{JSON.stringify(configResult)}</p>
+          <div className="p-5 border rounded-2xl mt-8">
+            {configResult.status === "needs_clarification" && (
+              <AIAgentQuestion questionList={configResult.clarificationQuestions}
+                onComplete={(resp:any)=>onComplete(resp)}
+              />
+            )}
           </div>
-      }
+
+}
+<div>{JSON.stringify(configResult)}</div>
 
     </div>
     )
