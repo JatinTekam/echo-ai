@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import {GoogleGenAI, ThinkingLevel} from "@google/genai";
 import { AgentConfigSystemPrompt } from "@/data/prompt";
 import { AgentConfigRespSchema } from "@/data/ReponseSchema";
-import { db, tools } from "@/db";
+import { AgentConfig, db, tools } from "@/db";
+import { currentUser } from "@clerk/nextjs/server";
 
 export async function POST(req:NextRequest){
 
     const {prompt}=await req.json();
+    const user=await currentUser();
 
     if(!prompt.trim()){
         return NextResponse.json({error:"Prompt is required"},{status:400});
@@ -31,6 +33,20 @@ export async function POST(req:NextRequest){
                 responseSchema: AgentConfigRespSchema
             }
         })
+
+        const aiOutput=JSON.parse(response.text??'{}');
+
+        if(aiOutput.status=='ready'){
+            const agentId=crypto.randomUUID();
+            const dbResult=await db.insert(AgentConfig).values({
+                ...aiOutput.config,
+                agentImage: 'https://api.dicebear.com/10.x/gaze/svg?tags=animation&seed='+agentId,
+                agentId: agentId,
+                userEmail: user?.primaryEmailAddress?.emailAddress,
+            }).returning();
+
+            return NextResponse.json({...dbResult[0],status_:'ready'});
+        }
 
         return NextResponse.json(JSON.parse(response.text??'{}'));
 

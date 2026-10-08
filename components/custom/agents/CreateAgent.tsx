@@ -5,6 +5,7 @@ import axios from "axios";
 import { ArrowUp, BarChart3, Bot, BriefcaseBusiness, Code2, Headphones, Loader2, Loader2Icon, PenLine, Plus } from "lucide-react"
 import { useState } from "react";
 import AIAgentQuestion from "./AIAgentQuestion";
+import NewAgentCard from "./NewAgentCard";
 
 
 const quickSuggestion = [
@@ -102,10 +103,34 @@ export type ClearificationQuestions = {
   customPlaceholder: string
 }
 
+export type CreatedAgentType={
+  id: number,
+  userEmail:string,
+  agentId: string,
+  name: string,
+  agentImage: string,
+  description: string,
+  instructions: string,
+  objective: string,
+  tools: any,
+  skills: string[],
+  schedule: AgentSchedule,
+  outputFormat: string,
+  status: string,
+  createdAt: string,
+}
+
+export type AgentSchedule={
+  type: "once" | "recurring" | "manual"
+  frequency?: "hourly" | "daily" | "weekly" | "monthly"
+  time?: string
+}
+
 const CreateAgent = () => {
 
     const [prompt,setPrompt]=useState("");
     const [configResult,setConfigResult]=useState<AgentConfigResp | null>(null);
+    const [createdAgent,setCreatedAgent]=useState<CreatedAgentType | null>(null);
     const [loading,setLoading]=useState(false);
 
     const OnSubmit=async()=>{
@@ -114,13 +139,16 @@ const CreateAgent = () => {
         prompt: prompt
       })
 
-      console.log(result.data);
       setConfigResult(result.data);
+
+      if(result.data?.status_=='ready'){
+        setCreatedAgent(result.data);
+      }
+
       setLoading(false);
     }
 
     const onComplete=async(resp:any)=>{
-      console.log("OnComplete",resp);
       setConfigResult(null);
       const updatedPrompt=prompt+ "/n"+ JSON.stringify(resp);
 
@@ -129,8 +157,9 @@ const CreateAgent = () => {
         prompt: updatedPrompt
       })
 
-      console.log(result.data);
+      console.log(result.data)
       setConfigResult(result.data);
+      setCreatedAgent(result.data);
       setLoading(false);
     }
 
@@ -201,11 +230,11 @@ const CreateAgent = () => {
                 onComplete={(resp:any)=>onComplete(resp)}
               />
             )}
+    <NewAgentCard createdAgent={createdAgent}/>
           </div>
 
 }
-<div>{JSON.stringify(configResult)}</div>
-
+{/* <div>{JSON.stringify(configResult)}</div> */}
     </div>
     )
 }

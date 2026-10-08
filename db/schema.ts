@@ -73,6 +73,9 @@ export const AgentConfig=pgTable("agentConfig",{
   skills: jsonb('skills'),
   schedule: jsonb('schedule'),
   outputFormat: text('outputFormat'),
+  status: varchar('status').default('active'),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
 
 
