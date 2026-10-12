@@ -43,11 +43,11 @@ const NewAgentCard = ({ createdAgent }: Props) => {
           <p className="text-muted-foreground text-md line-clamp-1">
             {createdAgent?.description}
           </p>
-          <div className="flex gap-3 items-center text-muted-foreground text-sm items-center mt-2">
+          <div className="flex gap-3  text-muted-foreground text-md mt-2">
             <div className="flex gap-2 ">
-              <CalendarCheck2Icon /> Next Run on {createdAgent?.schedule?.time}
+              <CalendarCheck2Icon className="w-4"/> Next Run on {createdAgent?.schedule?.time}
             </div>
-            <h2>Runs {createdAgent?.schedule?.frequency}</h2>
+            <h2 className="text-sm">Runs {createdAgent?.schedule?.frequency}</h2>
           </div>
         </div>
       </div>
