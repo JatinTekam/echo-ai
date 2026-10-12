@@ -1,5 +1,6 @@
 "use client";
 import { UserDetailContext } from "@/context/UserDetailContext";
+import { useUser } from "@clerk/nextjs";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 
@@ -9,16 +10,42 @@ const Provider = ({
   children: React.ReactNode;
 }>) => {
   const [userDetails, setUserDetails] = useState();
+  //const { isLoaded, isSignedIn } = useUser();
 
-  useEffect(() => {
-    createNewUser();
-  }, []);
+  const { isLoaded, isSignedIn, user } = useUser();
 
-  const createNewUser = async () => {
+useEffect(() => {
+  console.log({
+    isLoaded,
+    isSignedIn,
+    userId: user?.id,
+  });
+}, [isLoaded, isSignedIn, user]);
+
+  // useEffect(() => {
+  //   createNewUser();
+  // }, []);
+
+  // const createNewUser = async () => {
+  //   const result = await axios.post("/api/users");
+  //   console.log(result);
+  //   setUserDetails(result.data);
+  // };
+useEffect(() => {
+if (!isLoaded || !isSignedIn) return;
+
+const createNewUser = async () => {
+  try {
     const result = await axios.post("/api/users");
-    console.log(result);
     setUserDetails(result.data);
-  };
+  } catch (error) {
+    console.error("Failed to create or fetch user:", error);
+  }
+};
+
+createNewUser();
+
+}, [isLoaded, isSignedIn]);
 
   return (
     <div>
