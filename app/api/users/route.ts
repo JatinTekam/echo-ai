@@ -1,12 +1,19 @@
 import { db, users } from "@/db";
-import { currentUser } from "@clerk/nextjs/server";
+import {auth, currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
+  const { userId, sessionId } = await auth();
   const user = await currentUser();
 
-  console.log(user)
+  console.log({
+    userId,
+    sessionId,
+    hasUser: Boolean(user),
+  });
+
+  //console.log(user)
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
