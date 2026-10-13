@@ -4,6 +4,7 @@ import { AgentConfigSystemPrompt } from "@/data/prompt";
 import { AgentConfigRespSchema } from "@/data/ReponseSchema";
 import { AgentConfig, db, tools } from "@/db";
 import { currentUser } from "@clerk/nextjs/server";
+import { eq } from "drizzle-orm";
 
 export async function POST(req:NextRequest){
 
@@ -57,5 +58,16 @@ export async function POST(req:NextRequest){
 }
 
 export async function PUT(req:NextRequest){
-    
+    const agentConfig=await req.json();
+
+    const result=await db.update(AgentConfig).set({
+        ...agentConfig,
+        createdAt: new Date()
+    }).where(eq(AgentConfig.agentId,AgentConfig?.agentId))
+    .returning();
+
+    console.log();
+
+    return NextResponse.json(result);
+
 }

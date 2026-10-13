@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
+import axios from "axios";
 
 type Props = {
   children: any;
@@ -125,9 +126,12 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent }: Props) => {
     });
   };
 
-  const handleSumbit = (event: any) => {
+  const handleSumbit =async (event: any) => {
     //Save To Database
     event.preventDefault();
+    const result=await axios.put("/api/agent/configure",{
+      ...draftAgent
+    })
 
     setUpdatedAgent(draftAgent);
 
