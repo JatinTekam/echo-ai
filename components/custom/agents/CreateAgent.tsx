@@ -281,12 +281,12 @@ const CreateAgent = () => {
           <AIAgentQuestion
             questionList={configResult.clarificationQuestions}
             onComplete={(resp: any) => onComplete(resp)}
-          />
+          /> 
         </div>
       )}
       {/* <div>{JSON.stringify(configResult)}</div> */}
 
-      {createdAgent && <NewAgentCard createdAgent={createdAgent} />}
+      {createdAgent && <NewAgentCard createdAgent={createdAgent} setUpdatedAgent={(value:CreatedAgentType)=>setCreatedAgent(value)} />}
     </div>
   );
 };
