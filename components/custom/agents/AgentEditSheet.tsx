@@ -23,11 +23,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "@/components/ui/toast";
 
-type Props={
-    children: any,
-    agentConfig: CreatedAgentType | null;
-}
+type Props = {
+  children: any;
+  agentConfig: CreatedAgentType | null;
+  setUpdatedAgent: any;
+};
 
 const availableTools = [
   { id: "google_search", name: "Google Search" },
@@ -39,61 +41,81 @@ const availableTools = [
   { id: "notion", name: "Notion" },
 ];
 
-const AgentEditSheet = ({ children, agentConfig }: Props) => {
-
-  const [draftAgent,setDraftAgent]=useState<CreatedAgentType | null>(agentConfig);
+const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent }: Props) => {
+  const [draftAgent, setDraftAgent] = useState<CreatedAgentType | null>(
+    agentConfig,
+  );
   const [newSkill, setNewSkill] = useState("");
+  const [openSheet,setOpenSheet]=useState(false);
 
-  const shuffleImage=()=>{
-    const randomSeed=crypto.randomUUID();
-    const newImage='https://api.dicebear.com/10.x/gaze/svg?tags=animation&seed='+randomSeed;
-    setDraftAgent((prev:any)=>({
+  const shuffleImage = () => {
+    const randomSeed = crypto.randomUUID();
+    const newImage =
+      "https://api.dicebear.com/10.x/gaze/svg?tags=animation&seed=" +
+      randomSeed;
+    setDraftAgent((prev: any) => ({
       ...prev,
       agentImage: newImage,
-    }))
-  }
+    }));
+  };
 
-  const updateDraft=(key:string,value:string)=>{
-      setDraftAgent((prev:any)=>({
-        ...prev,
-        [key]:value
-      }));
-  }
-
-  const updateSchedule = (updates: Partial<NonNullable<CreatedAgentType["schedule"]>>) => {
-    setDraftAgent((prev) => prev ? {
+  const updateDraft = (key: string, value: string) => {
+    setDraftAgent((prev: any) => ({
       ...prev,
-      schedule: {
-        ...prev.schedule,
-        ...updates,
-        type: updates.type ?? prev.schedule?.type ?? "manual",
-      },
-    } : prev);
-  }
+      [key]: value,
+    }));
+  };
+
+  const updateSchedule = (
+    updates: Partial<NonNullable<CreatedAgentType["schedule"]>>,
+  ) => {
+    setDraftAgent((prev) =>
+      prev
+        ? {
+            ...prev,
+            schedule: {
+              ...prev.schedule,
+              ...updates,
+              type: updates.type ?? prev.schedule?.type ?? "manual",
+            },
+          }
+        : prev,
+    );
+  };
 
   const addSkill = () => {
     const skill = newSkill.trim();
     if (!skill) return;
 
-    setDraftAgent((prev) => prev ? {
-      ...prev,
-      skills: [...(prev.skills ?? []), skill],
-    } : prev);
+    setDraftAgent((prev) =>
+      prev
+        ? {
+            ...prev,
+            skills: [...(prev.skills ?? []), skill],
+          }
+        : prev,
+    );
     setNewSkill("");
-  }
+  };
 
   const removeSkill = (skillToRemove: string) => {
-    setDraftAgent((prev) => prev ? {
-      ...prev,
-      skills: (prev.skills ?? []).filter((skill) => skill !== skillToRemove),
-    } : prev);
-  }
+    setDraftAgent((prev) =>
+      prev
+        ? {
+            ...prev,
+            skills: (prev.skills ?? []).filter(
+              (skill) => skill !== skillToRemove,
+            ),
+          }
+        : prev,
+    );
+  };
 
   const toggleTool = (toolId: string) => {
     setDraftAgent((prev) => {
       if (!prev) return prev;
 
-      const tools = Array.isArray(prev.tools) ? prev.tools as string[] : [];
+      const tools = Array.isArray(prev.tools) ? (prev.tools as string[]) : [];
       return {
         ...prev,
         tools: tools.includes(toolId)
@@ -101,62 +123,89 @@ const AgentEditSheet = ({ children, agentConfig }: Props) => {
           : [...tools, toolId],
       };
     });
-  }
+  };
 
-  const handleSumbit=()=>{
+  const handleSumbit = (event: any) => {
+    //Save To Database
+    event.preventDefault();
 
-  }
+    setUpdatedAgent(draftAgent);
 
+    toast.add({
+      title: "Agent Updated",
+      type: "success",
+    });
+
+    setOpenSheet(false);
+
+  };
 
   return (
-    <Sheet>
+    <Sheet open={openSheet} onOpenChange={setOpenSheet}>
       <SheetTrigger render={children} />
       <SheetContent>
         <form onSubmit={handleSumbit} className="flex min-h-0 flex-1 flex-col">
-        <SheetHeader className="border-b py-4">
-        <div className="flex items-center gap-2.5">
-            <div>
-                <Image src={'/echo-logo.png'} alt="logo" width={40} height={40}/>
+          <SheetHeader className="border-b py-4">
+            <div className="flex items-center gap-2.5">
+              <div>
+                <Image
+                  src={"/echo-logo.png"}
+                  alt="logo"
+                  width={40}
+                  height={40}
+                />
+              </div>
+              <div>
+                <SheetTitle>Edit Agent</SheetTitle>
+                <SheetDescription>
+                  Update how this agent look, works and more
+                </SheetDescription>
+              </div>
             </div>
-          <div>
-            <SheetTitle>Edit Agent</SheetTitle>
-            <SheetDescription>Update how this agent look, works and more</SheetDescription>
-          </div>
-        </div>
-        </SheetHeader>
+          </SheetHeader>
 
-        <ScrollArea className="min-h-0 flex-1 p-5">
+          <ScrollArea className="min-h-0 flex-1 p-5">
             <section className="flex gap-3 items-center border rounded-2xl bg-gray-50 p-3">
-                <div>
-                    <img src={draftAgent?.agentImage ?? ""} alt={draftAgent?.name ?? ""} width={88} height={88}
-                    className="bg-slate-100 p-2 border rounded-2xl size-20"/>
-                </div>
-                <div className="space-y-2">
-                  <p className="font-medium">Agent Images </p>
-                  <p className="text-xs text-muted-foreground">Shuffle to generate new look</p>
-                  <Button variant={'outline'}
-                  onClick={shuffleImage}
-                  ><Shuffle/>Shuffle Image</Button>
-                </div>
+              <div>
+                <img
+                  src={draftAgent?.agentImage ?? ""}
+                  alt={draftAgent?.name ?? ""}
+                  width={88}
+                  height={88}
+                  className="bg-slate-100 p-2 border rounded-2xl size-20"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="font-medium">Agent Images </p>
+                <p className="text-xs text-muted-foreground">
+                  Shuffle to generate new look
+                </p>
+                <Button variant={"outline"} onClick={shuffleImage}>
+                  <Shuffle />
+                  Shuffle Image
+                </Button>
+              </div>
             </section>
 
             <div className="space-y-2 mt-2">
               <label htmlFor="">Agent Name</label>
-              <Input 
-              value={draftAgent?.name}
-              onChange={(event)=>updateDraft('name',event.target.value)}
-              placeholder="Give Your Agent Name"
-              required
-              className="mt-1"
+              <Input
+                value={draftAgent?.name}
+                onChange={(event) => updateDraft("name", event.target.value)}
+                placeholder="Give Your Agent Name"
+                required
+                className="mt-1"
               />
             </div>
 
-          <div className="space-y-2 mt-4">
+            <div className="space-y-2 mt-4">
               <label htmlFor="agent-objective">Objective</label>
               <Textarea
                 id="agent-objective"
                 value={draftAgent?.objective ?? ""}
-                onChange={(event) => updateDraft("objective", event.target.value)}
+                onChange={(event) =>
+                  updateDraft("objective", event.target.value)
+                }
                 placeholder="Describe the outcome this agent should achieve"
                 className="mt-1 min-h-20"
               />
@@ -167,7 +216,9 @@ const AgentEditSheet = ({ children, agentConfig }: Props) => {
               <Textarea
                 id="agent-instructions"
                 value={draftAgent?.instructions ?? ""}
-                onChange={(event) => updateDraft("instructions", event.target.value)}
+                onChange={(event) =>
+                  updateDraft("instructions", event.target.value)
+                }
                 placeholder="Add step-by-step instructions for this agent"
                 className="mt-1 min-h-32"
               />
@@ -176,15 +227,24 @@ const AgentEditSheet = ({ children, agentConfig }: Props) => {
             <section className="mt-5 space-y-3 rounded-xl border p-3">
               <div>
                 <h3 className="text-sm font-medium">Schedule</h3>
-                <p className="text-xs text-muted-foreground">Choose when and how often this agent runs.</p>
+                <p className="text-xs text-muted-foreground">
+                  Choose when and how often this agent runs.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label htmlFor="agent-run-type" className="text-sm">Run type</label>
+                  <label htmlFor="agent-run-type" className="text-sm">
+                    Run type
+                  </label>
                   <Select
                     value={draftAgent?.schedule?.type ?? "manual"}
-                    onValueChange={(value) => value && updateSchedule({ type: value as "once" | "recurring" | "manual" })}
+                    onValueChange={(value) =>
+                      value &&
+                      updateSchedule({
+                        type: value as "once" | "recurring" | "manual",
+                      })
+                    }
                   >
                     <SelectTrigger id="agent-run-type" className="w-full">
                       <SelectValue />
@@ -198,23 +258,41 @@ const AgentEditSheet = ({ children, agentConfig }: Props) => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="agent-schedule-time" className="text-sm">Time</label>
+                  <label htmlFor="agent-schedule-time" className="text-sm">
+                    Time
+                  </label>
                   <Input
                     id="agent-schedule-time"
                     type="time"
                     value={draftAgent?.schedule?.time ?? "09:00"}
-                    onChange={(event) => updateSchedule({ time: event.target.value })}
+                    onChange={(event) =>
+                      updateSchedule({ time: event.target.value })
+                    }
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="agent-schedule-frequency" className="text-sm">Frequency</label>
+                <label htmlFor="agent-schedule-frequency" className="text-sm">
+                  Frequency
+                </label>
                 <Select
                   value={draftAgent?.schedule?.frequency ?? "daily"}
-                  onValueChange={(value) => value && updateSchedule({ frequency: value as "hourly" | "daily" | "weekly" | "monthly" })}
+                  onValueChange={(value) =>
+                    value &&
+                    updateSchedule({
+                      frequency: value as
+                        | "hourly"
+                        | "daily"
+                        | "weekly"
+                        | "monthly",
+                    })
+                  }
                 >
-                  <SelectTrigger id="agent-schedule-frequency" className="w-full">
+                  <SelectTrigger
+                    id="agent-schedule-frequency"
+                    className="w-full"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -230,12 +308,17 @@ const AgentEditSheet = ({ children, agentConfig }: Props) => {
             <section className="mt-5 space-y-3">
               <div>
                 <h3 className="text-sm font-medium">Skills</h3>
-                <p className="text-xs text-muted-foreground">Add or remove capabilities this agent should use.</p>
+                <p className="text-xs text-muted-foreground">
+                  Add or remove capabilities this agent should use.
+                </p>
               </div>
 
               <div className="flex flex-wrap gap-2 rounded-xl border bg-gray-50 p-3">
                 {(draftAgent?.skills ?? []).map((skill, index) => (
-                  <span key={`${skill}-${index}`} className="inline-flex items-center gap-1 rounded-full border bg-white px-2.5 py-1 text-xs">
+                  <span
+                    key={`${skill}-${index}`}
+                    className="inline-flex items-center gap-1 rounded-full border bg-white px-2.5 py-1 text-xs"
+                  >
                     {skill}
                     <button
                       type="button"
@@ -262,7 +345,12 @@ const AgentEditSheet = ({ children, agentConfig }: Props) => {
                   placeholder="Add a skill"
                   aria-label="New skill"
                 />
-                <Button type="button" variant="outline" onClick={addSkill} disabled={!newSkill.trim()}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addSkill}
+                  disabled={!newSkill.trim()}
+                >
                   <Plus /> Add
                 </Button>
               </div>
@@ -272,23 +360,43 @@ const AgentEditSheet = ({ children, agentConfig }: Props) => {
               <div>
                 <h3 className="text-sm font-medium">Connected Tools</h3>
                 <p className="text-xs text-muted-foreground">
-                  {availableTools.filter((tool) => (draftAgent?.tools ?? []).includes(tool.id)).length} of {availableTools.length} connected
+                  {
+                    availableTools.filter((tool) =>
+                      (draftAgent?.tools ?? []).includes(tool.id),
+                    ).length
+                  }{" "}
+                  of {availableTools.length} connected
                 </p>
               </div>
 
               <div className="space-y-2">
                 {availableTools.map((tool) => {
-                  const isConnected = (draftAgent?.tools ?? []).includes(tool.id);
+                  const isConnected = (draftAgent?.tools ?? []).includes(
+                    tool.id,
+                  );
 
                   return (
-                    <div key={tool.id} className="flex items-center justify-between gap-3 rounded-xl border p-3">
+                    <div
+                      key={tool.id}
+                      className="flex items-center justify-between gap-3 rounded-xl border p-3"
+                    >
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${isConnected ? "bg-emerald-50 text-emerald-600" : "bg-muted text-muted-foreground"}`}>
-                          {isConnected ? <Link2 className="size-5" /> : <Link2Off className="size-5" />}
+                        <div
+                          className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${isConnected ? "bg-emerald-50 text-emerald-600" : "bg-muted text-muted-foreground"}`}
+                        >
+                          {isConnected ? (
+                            <Link2 className="size-5" />
+                          ) : (
+                            <Link2Off className="size-5" />
+                          )}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium">{tool.name}</p>
-                          <p className={`text-xs ${isConnected ? "text-emerald-600" : "text-muted-foreground"}`}>
+                          <p className="truncate text-sm font-medium">
+                            {tool.name}
+                          </p>
+                          <p
+                            className={`text-xs ${isConnected ? "text-emerald-600" : "text-muted-foreground"}`}
+                          >
                             {isConnected ? "Connected" : "Not connected"}
                           </p>
                         </div>
@@ -308,23 +416,30 @@ const AgentEditSheet = ({ children, agentConfig }: Props) => {
             </section>
 
             <div className="mt-5 space-y-2">
-              <label htmlFor="agent-output-format" className="text-sm font-medium">Output Format</label>
+              <label
+                htmlFor="agent-output-format"
+                className="text-sm font-medium"
+              >
+                Output Format
+              </label>
               <Textarea
                 id="agent-output-format"
                 value={draftAgent?.outputFormat ?? ""}
-                onChange={(event) => updateDraft("outputFormat", event.target.value)}
+                onChange={(event) =>
+                  updateDraft("outputFormat", event.target.value)
+                }
                 placeholder="A structured Markdown summary featuring a calendar timeline, top focus priorities, and a recommended time-blocked agenda."
                 className="min-h-24"
               />
             </div>
-        </ScrollArea>
-        <SheetFooter className="border-t">
+          </ScrollArea>
+          <SheetFooter className="border-t">
             <div className="flex justify-end gap-2.5">
-            <Button variant={'outline'}>Cancel</Button>
-            <Button className={'bg-purple-700'}>Save Changes</Button>
+              <Button variant={"outline"}>Cancel</Button>
+              <Button className={"bg-purple-700"}>Save Changes</Button>
             </div>
-        </SheetFooter>
-    </form>
+          </SheetFooter>
+        </form>
       </SheetContent>
     </Sheet>
   );

@@ -55,3 +55,7 @@ export async function POST(req:NextRequest){
         return NextResponse.json({error:error},{status:500});
     }
 }
+
+export async function PUT(req:NextRequest){
+    
+}

@@ -20,9 +20,10 @@ import AgentEditSheet from "./AgentEditSheet";
 
 type Props = {
   createdAgent: CreatedAgentType | null;
+  setUpdatedAgent: any
 };
 
-const NewAgentCard = ({ createdAgent }: Props) => {
+const NewAgentCard = ({ createdAgent,setUpdatedAgent }: Props) => {
   return (
     <div className="flex items-center justify-between border mt-7 p-4 rounded-2xl shadow-lg hover:shadow-purple-100">
       <div className="flex gap-4 items-center">
@@ -54,7 +55,7 @@ const NewAgentCard = ({ createdAgent }: Props) => {
 
       <div className="flex gap-2 items-center text-muted-foreground">
        
-       <AgentEditSheet agentConfig={createdAgent}>
+       <AgentEditSheet agentConfig={createdAgent} setUpdatedAgent={setUpdatedAgent}>
          <Button variant={"ghost"} size={"icon"}>
           <Pencil />
         </Button>
