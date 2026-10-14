@@ -133,6 +133,17 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent }: Props) => {
       ...draftAgent
     })
 
+    console.log(result);
+
+    if(result.data?.error){
+      toast.add({
+        type:"error",
+        "title": result.data?.error ?  result.data?.error   :  "Something Went Wrong"
+      });
+
+      return;
+    }
+
     setUpdatedAgent(draftAgent);
 
     toast.add({
@@ -440,7 +451,7 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent }: Props) => {
           <SheetFooter className="border-t">
             <div className="flex justify-end gap-2.5">
               <Button variant={"outline"}>Cancel</Button>
-              <Button className={"bg-purple-700"}>Save Changes</Button>
+              <Button className={"bg-purple-700"} type="submit">Save Changes</Button>
             </div>
           </SheetFooter>
         </form>
