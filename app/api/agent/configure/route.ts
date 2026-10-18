@@ -109,6 +109,25 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (e) {
-    return NextResponse.json({error:"Internal Server Error"},{status:500});
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
+}
+
+export async function GET(req: NextRequest) {
+  const activeUser = await currentUser();
+  const email = activeUser?.primaryEmailAddress?.emailAddress;
+
+  if (!email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const result = await db
+    .select()
+    .from(AgentConfig)
+    .where(eq(AgentConfig.userEmail, email));
+
+  return NextResponse.json(result);
 }
