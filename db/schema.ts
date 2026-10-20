@@ -45,7 +45,7 @@ export const tools = pgTable("tools", {
 
   approvalRules: jsonb("approval_rules").$type<Record<string, boolean>>(),
 
-  config: jsonb("config").$type<Record<string, any>>(),
+  config: jsonb("config").$type<Record<string, unknown>>(),
 
   riskLevel: varchar("risk_level", { length: 30 }).default("low"),
 

@@ -4,7 +4,7 @@ import { ClearificationQuestions } from './CreateAgent'
 
 type Props = {
   questionList: ClearificationQuestions[]
-  onComplete: any
+  onComplete: (answers: Record<string, string>) => void
 }
 
 const AIAgentQuestion = ({ questionList, onComplete }: Props) => {

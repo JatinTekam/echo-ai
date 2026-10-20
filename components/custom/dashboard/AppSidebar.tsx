@@ -9,7 +9,6 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { UserDetailContext } from "@/context/UserDetailContext"
 import { UserButton } from "@clerk/nextjs"
@@ -17,12 +16,12 @@ import { UserButton } from "@clerk/nextjs"
 import { AppWindow, Blocks, Bot, Layers, Play, Settings, User2 } from "lucide-react"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { useContext, useEffect } from "react"
+import { useContext } from "react"
 
 export function AppSidebar() {
 
     const path=usePathname();
-    const { userDetails } = useContext(UserDetailContext);
+    const userDetails = useContext(UserDetailContext)?.userDetails;
     const router=useRouter();
   
 

@@ -1,5 +1,6 @@
 "use client";
 import axios from "axios";
+import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { CreatedAgentType } from "./CreateAgent";
 import {
@@ -7,13 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -21,40 +16,62 @@ import { CalendarClockIcon, Ellipsis, Loader2, Pause, Pencil, Play, Trash } from
 import { Separator } from "@/components/ui/separator";
 import AgentEditSheet from "./AgentEditSheet";
 
+const fetchAgents = async () => {
+  const result = await axios.get<CreatedAgentType[]>("/api/agent/configure");
+  return result.data;
+};
+
 const MyAgents = () => {
   const [myAgents, setMyAgents] = useState<CreatedAgentType[] | null>();
-  const [loading,setLoading]=useState<boolean>(false);
+  const [loading,setLoading]=useState<boolean>(true);
   const [openEditAgentSheet,setOpenEditAgentSheet]=useState<boolean>(false);
   const [selectedEditAgent,setSelectedEditAgent]=useState<CreatedAgentType | null>(null);
 
   useEffect(() => {
-    AllUsersAgents();
+    let isMounted = true;
+
+    fetchAgents()
+      .then((agents) => {
+        if (!isMounted) return;
+        setMyAgents(agents);
+        setLoading(false);
+      })
+      .catch((error: unknown) => {
+        if (!isMounted) return;
+        console.error("Failed to load agents:", error);
+        setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const AllUsersAgents = async () => {
-    setLoading(true);
-    const result = await axios.get("/api/agent/configure");
-    console.log(result);
-    setMyAgents(result.data);
-    setLoading(false);
+  const refreshAgents = async () => {
+    try {
+      setMyAgents(await fetchAgents());
+    } catch (error) {
+      console.error("Failed to refresh agents:", error);
+    }
   };
 
   return (
     <div className="mt-5">
       <h2 className="font-bold text-xl">My Agents</h2>
       <p className="text-sm text-muted-foreground mt-1">
-        Run, Manage And Update All The Agents You've Created.
+        Run, Manage And Update All The Agents You&apos;ve Created.
       </p>
      {
       loading ? (<div className="h-[250px] flex gap-2 justify-center items-center"><Loader2 className="animate-spin"/>Loading...</div>)  : ( <div className="grid grid-cols-2 2xl:grid-cols-2 gap-5 mt-5">
-        {myAgents?.map((agent, index) => (
+        {myAgents?.map((agent) => (
           <div key={agent.id} className="p-2 border rounded-2xl">
             <div className="flex justify-between items-center ">
-              <img
-                src={agent?.agentImage}
+              <Image
+                src={agent.agentImage}
                 alt={agent.name}
-                width={30}
-                height={30}
+                width={64}
+                height={64}
+                unoptimized
                 className="p-2 border size-16 rounded-xl bg-slate-100"
               />
               <div>
@@ -104,7 +121,7 @@ const MyAgents = () => {
         { openEditAgentSheet &&
              <AgentEditSheet
             agentConfig={selectedEditAgent}
-            setUpdatedAgent={()=>AllUsersAgents()}
+            setUpdatedAgent={refreshAgents}
             openEditSheet={openEditAgentSheet}
             closeSheet={(val:boolean)=>setOpenEditAgentSheet(val)}/>
            }

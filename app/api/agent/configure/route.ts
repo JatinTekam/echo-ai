@@ -108,7 +108,7 @@ export async function PUT(req: NextRequest) {
     //console.log();
 
     return NextResponse.json(result);
-  } catch (e) {
+  } catch {
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },
@@ -116,7 +116,7 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const activeUser = await currentUser();
   const email = activeUser?.primaryEmailAddress?.emailAddress;
 

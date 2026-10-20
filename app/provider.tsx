@@ -1,5 +1,8 @@
 "use client";
-import { UserDetailContext } from "@/context/UserDetailContext";
+import {
+  UserDetailContext,
+  type UserDetails,
+} from "@/context/UserDetailContext";
 import { useUser } from "@clerk/nextjs";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
@@ -9,7 +12,7 @@ const Provider = ({
 }: Readonly<{
   children: React.ReactNode;
 }>) => {
-  const [userDetails, setUserDetails] = useState();
+  const [userDetails, setUserDetails] = useState<UserDetails | undefined>();
   //const { isLoaded, isSignedIn } = useUser();
 
   const { isLoaded, isSignedIn, user } = useUser();

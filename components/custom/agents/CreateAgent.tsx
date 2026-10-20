@@ -110,9 +110,9 @@ const templates = [
 ];
 
 type AgentConfigResp = {
-  status: "needs_clarification" | "ready";
-  clarificationQuestions: ClearificationQuestions[];
-  config: any;
+  status?: "needs_clarification" | "ready";
+  status_?: "ready";
+  clarificationQuestions?: ClearificationQuestions[];
 };
 
 export type ClearificationQuestions = {
@@ -133,7 +133,7 @@ export type CreatedAgentType = {
   description: string;
   instructions: string;
   objective: string;
-  tools: any;
+  tools: string[];
   skills: string[];
   schedule: AgentSchedule;
   outputFormat: string;
@@ -172,7 +172,7 @@ const CreateAgent = () => {
     setLoading(false);
   };
 
-  const onComplete = async (resp: any) => {
+  const onComplete = async (resp: Record<string, string>) => {
     setConfigResult(null);
     const updatedPrompt = prompt + "/n" + JSON.stringify(resp);
 
@@ -228,7 +228,7 @@ const CreateAgent = () => {
       </div>
 
       <div className="mt-3 flex gap-2">
-        {quickSuggestion.map((suggestion, index) => (
+        {quickSuggestion.map((suggestion) => (
           <Button
             onClick={() => setPrompt(suggestion.prompt)}
             variant={"outline"}
@@ -253,9 +253,9 @@ const CreateAgent = () => {
             </h2>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mt-3">
-              {templates.map((template, index) => (
+              {templates.map((template) => (
                 <div
-                  key={index}
+                  key={template.title}
                   className={`border rounded-2xl p-5 hover:cursor-pointer hover:shadow-lg ${template.border} ${template.glow}`}
                 >
                   <template.icon
@@ -279,14 +279,14 @@ const CreateAgent = () => {
       {configResult && configResult.status === "needs_clarification" && (
         <div className="p-5 border rounded-2xl mt-8">
           <AIAgentQuestion
-            questionList={configResult.clarificationQuestions}
-            onComplete={(resp: any) => onComplete(resp)}
+            questionList={configResult.clarificationQuestions ?? []}
+            onComplete={onComplete}
           /> 
         </div>
       )}
       {/* <div>{JSON.stringify(configResult)}</div> */}
 
-      {createdAgent && <NewAgentCard createdAgent={createdAgent} setUpdatedAgent={(value:CreatedAgentType)=>setCreatedAgent(value)} />}
+      {createdAgent && <NewAgentCard createdAgent={createdAgent} setUpdatedAgent={setCreatedAgent} />}
     </div>
   );
 };

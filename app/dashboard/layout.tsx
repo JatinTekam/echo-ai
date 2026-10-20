@@ -2,7 +2,7 @@ import { AppSidebar } from '@/components/custom/dashboard/AppSidebar'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import React from 'react'
 
-const Dashboardlayout = ({children}:any) => {
+const Dashboardlayout = ({children}: { children: React.ReactNode }) => {
   return (
     <SidebarProvider>
       <AppSidebar/>

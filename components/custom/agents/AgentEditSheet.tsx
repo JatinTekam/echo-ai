@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
   SheetFooter,
@@ -27,11 +26,11 @@ import { toast } from "@/components/ui/toast";
 import axios from "axios";
 
 type Props = {
-  children?: any
+  children?: React.ReactElement
   agentConfig: CreatedAgentType | null,
-  setUpdatedAgent: any,
+  setUpdatedAgent: (agent: CreatedAgentType) => void,
   openEditSheet?: boolean,
-  closeSheet?: any
+  closeSheet?: (open: boolean) => void
 };
 
 const availableTools = [
@@ -56,17 +55,16 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
     const newImage =
       "https://api.dicebear.com/10.x/gaze/svg?tags=animation&seed=" +
       randomSeed;
-    setDraftAgent((prev: any) => ({
-      ...prev,
-      agentImage: newImage,
-    }));
+    setDraftAgent((prev) =>
+      prev ? { ...prev, agentImage: newImage } : prev,
+    );
   };
 
-  const updateDraft = (key: string, value: string) => {
-    setDraftAgent((prev: any) => ({
-      ...prev,
-      [key]: value,
-    }));
+  const updateDraft = (
+    key: "name" | "objective" | "instructions" | "outputFormat",
+    value: string,
+  ) => {
+    setDraftAgent((prev) => (prev ? { ...prev, [key]: value } : prev));
   };
 
   const updateSchedule = (
@@ -128,9 +126,10 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
     });
   };
 
-  const handleSumbit =async (event: any) => {
+  const handleSumbit = async (event: React.FormEvent<HTMLFormElement>) => {
     //Save To Database
     event.preventDefault();
+    if (!draftAgent) return;
     const result=await axios.put("/api/agent/configure",{
       ...draftAgent
     })
@@ -154,12 +153,12 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
     });
 
     setOpenSheet(false);
-    closeSheet(false);
+    closeSheet?.(false);
 
   };
 
   return (
-    <Sheet open={openSheet} onOpenChange={(val:boolean)=>{setOpenSheet(val);closeSheet(val)}}>
+    <Sheet open={openSheet} onOpenChange={(val:boolean)=>{setOpenSheet(val);closeSheet?.(val)}}>
       <SheetTrigger render={children} />
       <SheetContent>
         <form onSubmit={handleSumbit} className="flex min-h-0 flex-1 flex-col">
@@ -185,13 +184,16 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
           <ScrollArea className="min-h-0 flex-1 p-5">
             <section className="flex gap-3 items-center border rounded-2xl bg-gray-50 p-3">
               <div>
-                <img
-                  src={draftAgent?.agentImage ?? ""}
-                  alt={draftAgent?.name ?? ""}
-                  width={88}
-                  height={88}
-                  className="bg-slate-100 p-2 border rounded-2xl size-20"
-                />
+                {draftAgent?.agentImage && (
+                  <Image
+                    src={draftAgent.agentImage}
+                    alt={draftAgent.name}
+                    width={88}
+                    height={88}
+                    unoptimized
+                    className="bg-slate-100 p-2 border rounded-2xl size-20"
+                  />
+                )}
               </div>
               <div className="space-y-2">
                 <p className="font-medium">Agent Images </p>

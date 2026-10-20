@@ -1,39 +1,37 @@
 import React from "react";
 import { CreatedAgentType } from "./CreateAgent";
-import { Calendar, CalendarCheck2Icon, Delete, Ellipsis, Pause, Pencil, Play, Trash } from "lucide-react";
+import { CalendarCheck2Icon, Ellipsis, Pause, Pencil, Play, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AgentEditSheet from "./AgentEditSheet";
 
 type Props = {
   createdAgent: CreatedAgentType | null;
-  setUpdatedAgent: any
+  setUpdatedAgent: (agent: CreatedAgentType) => void
 };
 
 const NewAgentCard = ({ createdAgent,setUpdatedAgent }: Props) => {
   return (
     <div className="flex items-center justify-between border mt-7 p-4 rounded-2xl shadow-lg hover:shadow-purple-100">
       <div className="flex gap-4 items-center">
-        <img
-          src={createdAgent?.agentImage}
-          alt={createdAgent?.name}
-          width={60}
-          height={60}
-          className="p-2 bg-slate-100 rounded-xl"
-        />
+        {createdAgent?.agentImage && (
+          <Image
+            src={createdAgent.agentImage}
+            alt={createdAgent.name}
+            width={60}
+            height={60}
+            unoptimized
+            className="p-2 bg-slate-100 rounded-xl"
+          />
+        )}
         <div className="flex flex-col gsp-1">
           <h2 className="font-semibold flex gap-2 items-center">
             {createdAgent?.name}
