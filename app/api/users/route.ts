@@ -1,6 +1,6 @@
-import { AgentConfig, db, users } from "@/db";
+import { db, users } from "@/db";
 import {auth, currentUser } from "@clerk/nextjs/server";
-import { desc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   const usersResult = await db
     .select()
     .from(users)
-    .where(eq(users.email, email)).orderBy(desc(AgentConfig?.createdAt));
+    .where(eq(users.email, email));
 
   //If not then insert new user
   if (usersResult.length == 0) {
