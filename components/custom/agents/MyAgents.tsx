@@ -19,10 +19,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { CalendarClockIcon, Ellipsis, Loader2, Pause, Pencil, Play, Trash } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import AgentEditSheet from "./AgentEditSheet";
 
 const MyAgents = () => {
   const [myAgents, setMyAgents] = useState<CreatedAgentType[] | null>();
   const [loading,setLoading]=useState<boolean>(false);
+  const [openEditAgentSheet,setOpenEditAgentSheet]=useState<boolean>(false);
+  const [selectedEditAgent,setSelectedEditAgent]=useState<CreatedAgentType | null>(null);
 
   useEffect(() => {
     AllUsersAgents();
@@ -45,7 +48,7 @@ const MyAgents = () => {
      {
       loading ? (<div className="h-[250px] flex gap-2 justify-center items-center"><Loader2 className="animate-spin"/>Loading...</div>)  : ( <div className="grid grid-cols-2 2xl:grid-cols-2 gap-5 mt-5">
         {myAgents?.map((agent, index) => (
-          <div className="p-2 border rounded-2xl">
+          <div key={agent.id} className="p-2 border rounded-2xl">
             <div className="flex justify-between items-center ">
               <img
                 src={agent?.agentImage}
@@ -69,7 +72,7 @@ const MyAgents = () => {
                       <DropdownMenuItem>
                         <Pause /> Pause Agent{" "}
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={()=>{setOpenEditAgentSheet(true); setSelectedEditAgent(agent)}}>
                         <Pencil /> Edit Agent{" "}
                       </DropdownMenuItem>
                     </DropdownMenuGroup>
@@ -95,8 +98,16 @@ const MyAgents = () => {
               <Separator className={'my-3'}/>
               <Button className={'bg-black w-full mt-2 cursor-pointer'}><Play/> Run Agent</Button>
             </div>
+           
           </div>
         ))}
+        { openEditAgentSheet &&
+             <AgentEditSheet
+            agentConfig={selectedEditAgent}
+            setUpdatedAgent={()=>AllUsersAgents()}
+            openEditSheet={openEditAgentSheet}
+            closeSheet={(val:boolean)=>setOpenEditAgentSheet(val)}/>
+           }
       </div>)
      }
     </div>
