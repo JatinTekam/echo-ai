@@ -1,4 +1,5 @@
 import CreateAgent from "@/components/custom/agents/CreateAgent";
+import MyAgents from "@/components/custom/agents/MyAgents";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function AgentsPage() {
@@ -14,7 +15,7 @@ function AgentsPage() {
           <CreateAgent/>
         </TabsContent>
         <TabsContent value="my-agent">
-          My Agents
+          <MyAgents/>
         </TabsContent>
       </Tabs>
     </div>

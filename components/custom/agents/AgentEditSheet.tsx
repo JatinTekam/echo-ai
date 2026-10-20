@@ -27,9 +27,11 @@ import { toast } from "@/components/ui/toast";
 import axios from "axios";
 
 type Props = {
-  children: any;
-  agentConfig: CreatedAgentType | null;
-  setUpdatedAgent: any;
+  children?: any
+  agentConfig: CreatedAgentType | null,
+  setUpdatedAgent: any,
+  openEditSheet?: boolean,
+  closeSheet?: any
 };
 
 const availableTools = [
@@ -42,12 +44,12 @@ const availableTools = [
   { id: "notion", name: "Notion" },
 ];
 
-const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent }: Props) => {
+const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=false, closeSheet }: Props) => {
   const [draftAgent, setDraftAgent] = useState<CreatedAgentType | null>(
     agentConfig,
   );
   const [newSkill, setNewSkill] = useState("");
-  const [openSheet,setOpenSheet]=useState(false);
+  const [openSheet,setOpenSheet]=useState(openEditSheet);
 
   const shuffleImage = () => {
     const randomSeed = crypto.randomUUID();
@@ -133,6 +135,17 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent }: Props) => {
       ...draftAgent
     })
 
+    console.log(result);
+
+    if(result.data?.error){
+      toast.add({
+        type:"error",
+        "title": result.data?.error ?  result.data?.error   :  "Something Went Wrong"
+      });
+
+      return;
+    }
+
     setUpdatedAgent(draftAgent);
 
     toast.add({
@@ -141,11 +154,12 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent }: Props) => {
     });
 
     setOpenSheet(false);
+    closeSheet(false);
 
   };
 
   return (
-    <Sheet open={openSheet} onOpenChange={setOpenSheet}>
+    <Sheet open={openSheet} onOpenChange={(val:boolean)=>{setOpenSheet(val);closeSheet(val)}}>
       <SheetTrigger render={children} />
       <SheetContent>
         <form onSubmit={handleSumbit} className="flex min-h-0 flex-1 flex-col">
@@ -440,7 +454,7 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent }: Props) => {
           <SheetFooter className="border-t">
             <div className="flex justify-end gap-2.5">
               <Button variant={"outline"}>Cancel</Button>
-              <Button className={"bg-purple-700"}>Save Changes</Button>
+              <Button className={"bg-purple-700"} type="submit">Save Changes</Button>
             </div>
           </SheetFooter>
         </form>
