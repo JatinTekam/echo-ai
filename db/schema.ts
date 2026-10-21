@@ -75,6 +75,7 @@ export const AgentConfig=pgTable("agentConfig",{
   outputFormat: text('outputFormat'),
   status: varchar('status').default('active'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  composioSessionId: varchar('composioSessionId'),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
 
