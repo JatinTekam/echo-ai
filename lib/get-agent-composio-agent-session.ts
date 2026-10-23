@@ -18,6 +18,7 @@ export async function getOrCreateAgentSession(agentConfig:CreatedAgentType,userE
     return session;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SaveComposioSessionId=async(agentId:string,session:any)=>{
 
     const result=await db.update(AgentConfig).set({
