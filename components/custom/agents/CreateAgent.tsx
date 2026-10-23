@@ -139,6 +139,7 @@ export type CreatedAgentType = {
   outputFormat: string;
   status: string;
   createdAt: string;
+  composioSessionId?: string
 };
 
 export type AgentSchedule = {
