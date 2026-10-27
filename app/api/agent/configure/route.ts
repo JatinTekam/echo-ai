@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { AgentConfigSystemPrompt } from "@/data/prompt";
-import { AgentConfigRespSchema } from "@/data/ReponseSchema";
+import { getAgentConfigRespSchema } from "@/data/ReponseSchema";
 import { AgentConfig, db, tools } from "@/db";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
@@ -20,21 +20,27 @@ export async function POST(req: NextRequest) {
     const aiTools = await db
       .select({
         slug: tools.slug,
+        name: tools.name,
+        description: tools.description,
       })
       .from(tools);
 
     const ai = new GoogleGenAI({ apiKey });
+    const availableToolSlugs = aiTools.map(({ slug }) => slug);
 
     const response = await ai.models.generateContent({
       model: "gemini-3.5-flash-lite",
       contents: AgentConfigSystemPrompt.replace(
         "{USER_PROMPT}",
         prompt,
-      ).replace("{AVAILABLE_TOOLS}", aiTools.toString()),
+      ).replace(
+        "{AVAILABLE_TOOLS}",
+        JSON.stringify(aiTools, null, 2),
+      ),
       config: {
         thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
         responseMimeType: "application/json",
-        responseSchema: AgentConfigRespSchema,
+        responseSchema: getAgentConfigRespSchema(availableToolSlugs),
       },
     });
 

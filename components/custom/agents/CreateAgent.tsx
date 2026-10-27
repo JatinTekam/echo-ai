@@ -11,6 +11,7 @@ import {
   Headphones,
   Loader2,
   Loader2Icon,
+  Mail,
   PenLine,
   Plus,
 } from "lucide-react";
@@ -20,10 +21,15 @@ import NewAgentCard from "./NewAgentCard";
 
 const quickSuggestion = [
   {
-    label: "Research assistant",
-    prompt:
-      "Create an agent that researches a topic, compares reliable sources, and summarizes the key findings.",
-  },
+  label: "Email assistant",
+  prompt:
+    "Create an agent that sends, receives, searches, and manages emails, helping organize the inbox and streamline email communication.",
+},
+  // {
+  //   label: "Research assistant",
+  //   prompt:
+  //     "Create an agent that researches a topic, compares reliable sources, and summarizes the key findings.",
+  // },
   {
     label: "Content writer",
     prompt:
@@ -47,6 +53,7 @@ const quickSuggestion = [
 ];
 
 const templates = [
+  
   {
     title: "Personal assistant",
     description:
@@ -182,7 +189,7 @@ const CreateAgent = () => {
       prompt: updatedPrompt,
     });
 
-    console.log(result.data);
+   console.log(result.data);
     setConfigResult(result.data);
     setCreatedAgent(result.data);
     setLoading(false);

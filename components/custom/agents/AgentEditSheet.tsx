@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -12,7 +12,7 @@ import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { CreatedAgentType } from "./CreateAgent";
-import { Link2, Link2Off, Plus, Shuffle, X } from "lucide-react";
+import { Link2, Link2Off, Loader2Icon, Plus, Shuffle, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -33,22 +33,21 @@ type Props = {
   closeSheet?: (open: boolean) => void
 };
 
-const availableTools = [
-  { id: "google_search", name: "Google Search" },
-  { id: "serp_search", name: "SERP Search" },
-  { id: "browserbase", name: "Browserbase" },
-  { id: "gmail", name: "Gmail" },
-  { id: "slack", name: "Slack" },
-  { id: "google_calendar", name: "Google Calendar" },
-  { id: "notion", name: "Notion" },
-];
+type EditableTool = {
+  name: string;
+  connected: boolean;
+  slug: string;
+  logo: string;
+};
 
 const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=false, closeSheet }: Props) => {
   const [draftAgent, setDraftAgent] = useState<CreatedAgentType | null>(
     agentConfig,
   );
   const [newSkill, setNewSkill] = useState("");
+  const [tools,setTools]=useState<EditableTool[] | []>([]);
   const [openSheet,setOpenSheet]=useState(openEditSheet);
+  const [loadingTools,setLoadingTools]=useState<boolean>(false);
 
   const shuffleImage = () => {
     const randomSeed = crypto.randomUUID();
@@ -59,6 +58,35 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
       prev ? { ...prev, agentImage: newImage } : prev,
     );
   };
+
+  useEffect(() => {
+    if (!agentConfig) return;
+
+    let isCurrent = true;
+    const fetchTools = async () => {
+      setLoadingTools(true);
+      try {
+        const result = await axios.get<EditableTool[]>(
+          `/api/agent/tools?agentId=${encodeURIComponent(agentConfig.agentId)}`,
+        );
+        if (isCurrent) setTools(result.data);
+      } catch {
+        if (isCurrent) {
+          toast.add({
+            type: "error",
+            title: "Could not load available tools",
+          });
+        }
+      }finally{
+        setLoadingTools(false);
+      }
+    };
+
+    void fetchTools();
+    return () => {
+      isCurrent = false;
+    };
+  }, [agentConfig]);
 
   const updateDraft = (
     key: "name" | "objective" | "instructions" | "outputFormat",
@@ -134,7 +162,7 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
       ...draftAgent
     })
 
-    console.log(result);
+    //console.log(result);
 
     if(result.data?.error){
       toast.add({
@@ -378,33 +406,45 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
 
             <section className="mt-5 space-y-3">
               <div>
-                <h3 className="text-sm font-medium">Connected Tools</h3>
+                <h3 className="text-sm font-medium">Available Tools</h3>
                 <p className="text-xs text-muted-foreground">
                   {
-                    availableTools.filter((tool) =>
-                      (draftAgent?.tools ?? []).includes(tool.id),
+                    tools.filter((tool) =>
+                      (draftAgent?.tools ?? []).includes(tool.slug),
                     ).length
                   }{" "}
-                  of {availableTools.length} connected
+                  of {tools.length} selected
                 </p>
               </div>
 
               <div className="space-y-2">
-                {availableTools.map((tool) => {
+                {loadingTools&&
+                <div className="p-2 border rounded-2xl flex justify-center">
+                  <Loader2Icon className="animate-spin"/> <p>Loading Tools.....</p>
+                  </div>}
+                {tools.map((tool) => {
                   const isConnected = (draftAgent?.tools ?? []).includes(
-                    tool.id,
+                    tool.slug,
                   );
 
                   return (
                     <div
-                      key={tool.id}
+                      key={tool.slug}
                       className="flex items-center justify-between gap-3 rounded-xl border p-3"
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <div
                           className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${isConnected ? "bg-emerald-50 text-emerald-600" : "bg-muted text-muted-foreground"}`}
                         >
-                          {isConnected ? (
+                          {tool.logo ? (
+                            <Image
+                              src={tool.logo}
+                              alt=""
+                              width={24}
+                              height={24}
+                              unoptimized
+                            />
+                          ) : tool.connected ? (
                             <Link2 className="size-5" />
                           ) : (
                             <Link2Off className="size-5" />
@@ -415,7 +455,7 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
                             {tool.name}
                           </p>
                           <p
-                            className={`text-xs ${isConnected ? "text-emerald-600" : "text-muted-foreground"}`}
+                            className={`text-xs ${isConnected ? "text-emerald-600" : "text-red-500"}`}
                           >
                             {isConnected ? "Connected" : "Not connected"}
                           </p>
@@ -425,9 +465,9 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
                         type="button"
                         size="sm"
                         variant={isConnected ? "outline" : "default"}
-                        onClick={() => toggleTool(tool.id)}
+                        onClick={() => toggleTool(tool.slug)}
                       >
-                        {isConnected ? "Disconnect" : "Connect"}
+                        {isConnected ? "Remove" : "Select"}
                       </Button>
                     </div>
                   );

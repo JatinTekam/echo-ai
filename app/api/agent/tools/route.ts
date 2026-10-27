@@ -1,5 +1,5 @@
-import { AgentConfig, db } from "@/db";
-import { getOrCreateAgentSession } from "@/lib/get-agent-composio-agent-session";
+import { AgentConfig, db, tools as toolCatalog } from "@/db";
+import { composio } from "@/lib/composio";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -15,14 +15,47 @@ export async function GET(req:NextRequest){
         return NextResponse.json({error:"Unauthorize User"},{status:400});
     }
 
+    const userEmail = user.primaryEmailAddress?.emailAddress;
+    if (!userEmail) {
+        return NextResponse.json({ error: "User email is required" }, { status: 400 });
+    }
 
-    const result=await db.select().from(AgentConfig)
-    .where(eq(AgentConfig.agentId,agentId ?? ''));
+    if (!agentId) {
+        return NextResponse.json({ error: "Agent ID is required" }, { status: 400 });
+    }
 
-    const agentConfig=result[0];
-    const allowedTools=agentConfig?.tools;
+    const [agentResult, catalogTools] = await Promise.all([
+        db.select().from(AgentConfig).where(eq(AgentConfig.agentId, agentId)),
+        db.select({
+            slug: toolCatalog.slug,
+            name: toolCatalog.name,
+            logo: toolCatalog.icon,
+        }).from(toolCatalog).where(eq(toolCatalog.enabled, true)),
+    ]);
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
-    const session=await getOrCreateAgentSession(agentConfig,user.primaryEmailAddress?.emailAddress);
+    const agentConfig = agentResult[0];
+    if (!agentConfig) {
+        return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+    }
+
+    const connectedAccounts = await composio.connectedAccounts.list({
+        userIds: [userEmail],
+        statuses: ["ACTIVE"],
+        limit: 100,
+    });
+    const connectedToolkitSlugs = new Set(
+        connectedAccounts.items.map((account) => account.toolkit.slug.toLowerCase()),
+    );
+
+    const availableTools = catalogTools.map((catalogTool) => {
+        return {
+            slug: catalogTool.slug,
+            name: catalogTool.name,
+            logo: catalogTool.logo ?? "",
+            connected: connectedToolkitSlugs.has(catalogTool.slug.toLowerCase()),
+        };
+    });
+
+    return NextResponse.json(availableTools);
+
 }

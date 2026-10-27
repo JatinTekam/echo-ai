@@ -1,7 +1,7 @@
 import {Type} from "@google/genai";
 
 
-export const AgentConfigRespSchema = {
+const AgentConfigRespSchema = {
   type: Type.OBJECT,
 
   properties: {
@@ -86,15 +86,6 @@ export const AgentConfigRespSchema = {
 
           items: {
             type: Type.STRING,
-            enum: [
-              "google_search",
-              "serp_search",
-              "browserbase",
-              "gmail",
-              "slack",
-              "google_calendar",
-              "notion",
-            ],
           },
         },
 
@@ -157,3 +148,23 @@ export const AgentConfigRespSchema = {
     "clarificationQuestions",
   ],
 };
+
+export const getAgentConfigRespSchema = (availableToolSlugs: string[]) => ({
+  ...AgentConfigRespSchema,
+  properties: {
+    ...AgentConfigRespSchema.properties,
+    config: {
+      ...AgentConfigRespSchema.properties.config,
+      properties: {
+        ...AgentConfigRespSchema.properties.config.properties,
+        tools: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.STRING,
+            ...(availableToolSlugs.length > 0 && { enum: availableToolSlugs }),
+          },
+        },
+      },
+    },
+  },
+});

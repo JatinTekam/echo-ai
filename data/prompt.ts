@@ -38,6 +38,12 @@ export const AgentConfigSystemPrompt=`
  AVAILABLE TOOLS:
 {AVAILABLE_TOOLS}
 
+ TOOL SELECTION:
+ - The list contains each tool's exact slug, name, and description.
+ - Use only exact slugs from this list.
+ - Select available tools needed to fulfill the user's request.
+ - Return an empty tools array only when the request does not require any listed tool.
+
 
  CLARIFICATION QUESTION RULES:
 
