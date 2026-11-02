@@ -48,7 +48,8 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
   const [tools,setTools]=useState<EditableTool[] | []>([]);
   const [openSheet,setOpenSheet]=useState(openEditSheet);
   const [loadingTools,setLoadingTools]=useState<boolean>(false);
-
+  const [connectingToolSlug,setConnectingToolSlug]=useState<string | null>(null);
+  const [connectAndDisconnectToolLoading,setConnectAndDisconnectToolLoading]=useState<boolean>(false);
   const shuffleImage = () => {
     const randomSeed = crypto.randomUUID();
     const newImage =
@@ -140,20 +141,6 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
     );
   };
 
-  const toggleTool = (toolId: string) => {
-    setDraftAgent((prev) => {
-      if (!prev) return prev;
-
-      const tools = Array.isArray(prev.tools) ? (prev.tools as string[]) : [];
-      return {
-        ...prev,
-        tools: tools.includes(toolId)
-          ? tools.filter((tool) => tool !== toolId)
-          : [...tools, toolId],
-      };
-    });
-  };
-
   const handleSumbit = async (event: React.FormEvent<HTMLFormElement>) => {
     //Save To Database
     event.preventDefault();
@@ -184,6 +171,79 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
     closeSheet?.(false);
 
   };
+
+  const connectTool = async (slug: string) => {
+    if (!agentConfig || connectingToolSlug) return;
+    setConnectAndDisconnectToolLoading(true);
+    const authWindow = window.open("about:blank", "_blank");
+    if (!authWindow) {
+      toast.add({
+        type: "error",
+        title: "Allow pop-ups to connect this tool",
+      });
+      return;
+    }
+
+    setConnectingToolSlug(slug);
+    try {
+      const result = await axios.post<{ redirectUrl: string }>(
+        "/api/agent/tools/connect",
+        {
+          agentId: agentConfig.agentId,
+          toolSlug: slug,
+        },
+      );
+
+      if (!result.data.redirectUrl) {
+        throw new Error("The connection service did not return a redirect URL");
+      }
+
+      authWindow.location.href = result.data.redirectUrl;
+      
+    } catch {
+      authWindow.close();
+      toast.add({
+        type: "error",
+        title: `Could not connect ${tools.find((tool) => tool.slug === slug)?.name ?? "tool"}`,
+      });
+      setConnectingToolSlug(null);
+    }finally{
+      setConnectAndDisconnectToolLoading(false);
+    }
+  };
+
+  const disconnectTool = async (slug: string) => {
+    if (!agentConfig || connectingToolSlug) return;
+    setConnectAndDisconnectToolLoading(true);
+    setConnectingToolSlug(slug);
+    try {
+      await axios.delete("/api/agent/tools/connect", {
+        data: {
+          agentId: agentConfig.agentId,
+          toolSlug: slug,
+        },
+      });
+      setTools((currentTools) =>
+        currentTools.map((tool) =>
+          tool.slug === slug ? { ...tool, connected: false } : tool,
+        ),
+      );
+      toast.add({
+        type: "success",
+        title: `Disconnected ${tools.find((tool) => tool.slug === slug)?.name ?? "tool"}`,
+      });
+    } catch {
+      toast.add({
+        type: "error",
+        title: `Could not disconnect ${tools.find((tool) => tool.slug === slug)?.name ?? "tool"}`,
+      });
+    } finally {
+      setConnectingToolSlug(null);
+      setOpenSheet(false);
+      setConnectAndDisconnectToolLoading(false);
+    }
+  };
+
 
   return (
     <Sheet open={openSheet} onOpenChange={(val:boolean)=>{setOpenSheet(val);closeSheet?.(val)}}>
@@ -408,12 +468,9 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
               <div>
                 <h3 className="text-sm font-medium">Available Tools</h3>
                 <p className="text-xs text-muted-foreground">
-                  {
-                    tools.filter((tool) =>
-                      (draftAgent?.tools ?? []).includes(tool.slug),
-                    ).length
-                  }{" "}
-                  of {tools.length} selected
+                  {tools.length}{" "}
+                  {tools.length === 1 ? "tool" : "tools"} configured for this
+                  agent
                 </p>
               </div>
 
@@ -423,9 +480,8 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
                   <Loader2Icon className="animate-spin"/> <p>Loading Tools.....</p>
                   </div>}
                 {tools.map((tool) => {
-                  const isConnected = (draftAgent?.tools ?? []).includes(
-                    tool.slug,
-                  );
+                  const isConnected = tool.connected;
+                  const isProcessing = connectingToolSlug === tool.slug;
 
                   return (
                     <div
@@ -464,10 +520,21 @@ const AgentEditSheet = ({ children, agentConfig, setUpdatedAgent, openEditSheet=
                       <Button
                         type="button"
                         size="sm"
-                        variant={isConnected ? "outline" : "default"}
-                        onClick={() => toggleTool(tool.slug)}
+                        disabled={connectAndDisconnectToolLoading}
+                        onClick={() =>
+                          isConnected
+                            ? disconnectTool(tool.slug)
+                            : connectTool(tool.slug)
+                        }
                       >
-                        {isConnected ? "Remove" : "Select"}
+                        {isProcessing ? (
+                          <>
+                            <Loader2Icon className="animate-spin" />
+                            {isConnected ? "Disconnecting" : "Connecting"}
+                          </>
+                        ) : (
+                          isConnected ? "Disconnect" : "Connect"
+                        )}
                       </Button>
                     </div>
                   );

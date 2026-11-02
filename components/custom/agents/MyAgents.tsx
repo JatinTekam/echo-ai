@@ -113,7 +113,11 @@ const MyAgents = () => {
                   {agent?.schedule?.type==='recurring' && <span> &nbsp; at {agent?.schedule?.time}</span>}</p>
               </div>
               <Separator className={'my-3'}/>
-              <Button className={'bg-black w-full mt-2 cursor-pointer'}><Play/> Run Agent</Button>
+              <div>
+              <Button variant={'outline'} className={' w-full mt-2 cursor-pointer'}><Play/> Run Agent</Button>
+              <Button className={'bg-black w-full mt-2 cursor-pointer'}><Play/> Chat With Agent</Button>
+              
+              </div>
             </div>
            
           </div>

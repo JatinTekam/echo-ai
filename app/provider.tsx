@@ -3,7 +3,7 @@ import {
   UserDetailContext,
   type UserDetails,
 } from "@/context/UserDetailContext";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 
@@ -13,17 +13,15 @@ const Provider = ({
   children: React.ReactNode;
 }>) => {
   const [userDetails, setUserDetails] = useState<UserDetails | undefined>();
-  //const { isLoaded, isSignedIn } = useUser();
-
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { getToken, isLoaded, isSignedIn, userId } = useAuth();
 
 useEffect(() => {
   console.log({
     isLoaded,
     isSignedIn,
-    userId: user?.id,
+    userId,
   });
-}, [isLoaded, isSignedIn, user]);
+}, [isLoaded, isSignedIn, userId]);
 
   // useEffect(() => {
   //   createNewUser();
@@ -39,7 +37,16 @@ if (!isLoaded || !isSignedIn) return;
 
 const createNewUser = async () => {
   try {
-    const result = await axios.post("/api/users");
+    const token = await getToken();
+    if (!token) {
+      throw new Error("Clerk session token is unavailable");
+    }
+
+    const result = await axios.post(
+      "/api/users",
+      {},
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
     setUserDetails(result.data);
   } catch (error) {
     console.error("Failed to create or fetch user:", error);
@@ -48,7 +55,7 @@ const createNewUser = async () => {
 
 createNewUser();
 
-}, [isLoaded, isSignedIn]);
+}, [getToken, isLoaded, isSignedIn]);
 
   return (
     <div>

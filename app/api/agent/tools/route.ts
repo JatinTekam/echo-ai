@@ -38,6 +38,12 @@ export async function GET(req:NextRequest){
         return NextResponse.json({ error: "Agent not found" }, { status: 404 });
     }
 
+    const agentToolSlugs = new Set(
+        (Array.isArray(agentConfig.tools) ? agentConfig.tools : []).filter(
+            (slug): slug is string => typeof slug === "string",
+        ),
+    );
+
     const connectedAccounts = await composio.connectedAccounts.list({
         userIds: [userEmail],
         statuses: ["ACTIVE"],
@@ -47,7 +53,9 @@ export async function GET(req:NextRequest){
         connectedAccounts.items.map((account) => account.toolkit.slug.toLowerCase()),
     );
 
-    const availableTools = catalogTools.map((catalogTool) => {
+    const availableTools = catalogTools.filter((catalogTool) =>
+        agentToolSlugs.has(catalogTool.slug),
+    ).map((catalogTool) => {
         return {
             slug: catalogTool.slug,
             name: catalogTool.name,
