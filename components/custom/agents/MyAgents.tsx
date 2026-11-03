@@ -12,9 +12,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { CalendarClockIcon, Ellipsis, Loader2, Pause, Pencil, Play, Trash } from "lucide-react";
+import { CalendarClockIcon, Ellipsis, Loader2, MessageCircle, Pause, Pencil, Play, Trash } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import AgentEditSheet from "./AgentEditSheet";
+import AgentChatDrawer from "./AgentChatDrawer";
 
 const fetchAgents = async () => {
   const result = await axios.get<CreatedAgentType[]>("/api/agent/configure");
@@ -26,6 +27,8 @@ const MyAgents = () => {
   const [loading,setLoading]=useState<boolean>(true);
   const [openEditAgentSheet,setOpenEditAgentSheet]=useState<boolean>(false);
   const [selectedEditAgent,setSelectedEditAgent]=useState<CreatedAgentType | null>(null);
+  const [openChatDrawer,setOpenChatDrawer]=useState<boolean>(false);
+  const [selectedChatAgent,setSelectedChatAgent]=useState<CreatedAgentType | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -64,8 +67,8 @@ const MyAgents = () => {
      {
       loading ? (<div className="h-[250px] flex gap-2 justify-center items-center"><Loader2 className="animate-spin"/>Loading...</div>)  : ( <div className="grid grid-cols-2 2xl:grid-cols-2 gap-5 mt-5">
         {myAgents?.map((agent) => (
-          <div key={agent.id} className="p-2 border rounded-2xl">
-            <div className="flex justify-between items-center ">
+          <div key={agent.id} className="p-2 border rounded-2xl relative">
+            <div className="flex justify-between items-center">
               <Image
                 src={agent.agentImage}
                 alt={agent.name}
@@ -113,10 +116,17 @@ const MyAgents = () => {
                   {agent?.schedule?.type==='recurring' && <span> &nbsp; at {agent?.schedule?.time}</span>}</p>
               </div>
               <Separator className={'my-3'}/>
-              <div>
-              <Button variant={'outline'} className={' w-full mt-2 cursor-pointer'}><Play/> Run Agent</Button>
-              <Button className={'bg-black w-full mt-2 cursor-pointer'}><Play/> Chat With Agent</Button>
-              
+              <div className="w-full flex items-center gap-2.5">
+                <Button variant={'outline'} className={' flex-1 mt-2 cursor-pointer'}><Play/> Run Agent</Button>
+                <Button
+                  className={'bg-blue-500 mt-2 cursor-pointer flex-1'}
+                  onClick={() => {
+                    setSelectedChatAgent(agent);
+                    setOpenChatDrawer(true);
+                  }}
+                >
+                  <MessageCircle/> Chat With Agent
+                </Button>
               </div>
             </div>
            
@@ -131,6 +141,16 @@ const MyAgents = () => {
            }
       </div>)
      }
+
+     <AgentChatDrawer
+       key={selectedChatAgent?.id ?? "default-agent"}
+       agent={selectedChatAgent}
+       open={openChatDrawer}
+       onOpenChange={(value) => {
+         setOpenChatDrawer(value);
+         if (!value) setSelectedChatAgent(null);
+       }}
+     />
     </div>
   );
 };
