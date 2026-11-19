@@ -1,10 +1,157 @@
 "use client";
 
 import { ArrowUp, CirclePlus, MessageSquareText, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { CreatedAgentType } from "./CreateAgent";
+import axios from "axios";
+
+const renderInlineMarkdown = (text: string): ReactNode[] => {
+  const pattern =
+    /(\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\*\*(.+?)\*\*|`([^`]+)`|\*(.+?)\*)/g;
+  const nodes: ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
+    }
+
+    if (match[2] && match[3]) {
+      nodes.push(
+        <a
+          key={match.index}
+          href={match[3]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="break-all font-medium text-[#087f8c] underline underline-offset-2"
+        >
+          {match[2]}
+        </a>,
+      );
+    } else if (match[4]) {
+      nodes.push(
+        <strong key={match.index} className="font-semibold">
+          {match[4]}
+        </strong>,
+      );
+    } else if (match[5]) {
+      nodes.push(
+        <code
+          key={match.index}
+          className="rounded bg-black/5 px-1 py-0.5 font-mono text-[0.9em]"
+        >
+          {match[5]}
+        </code>,
+      );
+    } else if (match[6]) {
+      nodes.push(<em key={match.index}>{match[6]}</em>);
+    }
+
+    lastIndex = pattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes;
+};
+
+const MarkdownMessage = ({ text }: { text: string }) => {
+  const lines = text.split(/\r?\n/);
+  const blocks: ReactNode[] = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index].trim();
+    if (!line) {
+      index += 1;
+      continue;
+    }
+
+    const heading = /^(#{1,6})\s+(.+)$/.exec(line);
+    if (heading) {
+      blocks.push(
+        <h3 key={index} className="mb-1 mt-3 font-semibold first:mt-0">
+          {renderInlineMarkdown(heading[2])}
+        </h3>,
+      );
+      index += 1;
+      continue;
+    }
+
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) {
+      blocks.push(<hr key={index} className="my-3 border-black/10" />);
+      index += 1;
+      continue;
+    }
+
+    if (/^\s*>/.test(lines[index])) {
+      const quote: string[] = [];
+      while (index < lines.length && /^\s*>/.test(lines[index])) {
+        quote.push(lines[index].replace(/^\s*>\s?/, "").trim());
+        index += 1;
+      }
+      blocks.push(
+        <blockquote
+          key={index}
+          className="my-2 border-l-2 border-[#b8c5c3] pl-3 text-[#555]"
+        >
+          {renderInlineMarkdown(quote.join(" "))}
+        </blockquote>,
+      );
+      continue;
+    }
+
+    const listMatch = /^\s*([-*+]|\d+\.)\s+(.+)$/.exec(lines[index]);
+    if (listMatch) {
+      const isOrdered = /^\d+\.$/.test(listMatch[1]);
+      const items: ReactNode[] = [];
+      while (index < lines.length) {
+        const item = /^\s*([-*+]|\d+\.)\s+(.+)$/.exec(lines[index]);
+        if (!item || /^\d+\.$/.test(item[1]) !== isOrdered) break;
+        items.push(
+          <li key={index}>{renderInlineMarkdown(item[2])}</li>,
+        );
+        index += 1;
+      }
+      const List = isOrdered ? "ol" : "ul";
+      blocks.push(
+        <List
+          key={`list-${index}`}
+          className={`my-2 space-y-1 pl-5 ${isOrdered ? "list-decimal" : "list-disc"}`}
+        >
+          {items}
+        </List>,
+      );
+      continue;
+    }
+
+    const paragraph: string[] = [];
+    while (
+      index < lines.length &&
+      lines[index].trim() &&
+      !/^\s*(#{1,6}\s+|[-*+]\s+|\d+\.\s+|>|(-{3,}|\*{3,}|_{3,})$)/.test(
+        lines[index],
+      )
+    ) {
+      paragraph.push(lines[index].trim());
+      index += 1;
+    }
+    if (paragraph.length) {
+      blocks.push(
+        <p key={index} className="my-2 first:mt-0 last:mb-0">
+          {renderInlineMarkdown(paragraph.join(" "))}
+        </p>,
+      );
+    }
+  }
+
+  return <div className="break-words [overflow-wrap:anywhere]">{blocks}</div>;
+};
 
 type Props = {
   agent?: CreatedAgentType | null;
@@ -37,14 +184,21 @@ const AgentChatDrawer = ({ agent, open = false, onOpenChange }: Props) => {
     [agentDescription, agentTitle],
   );
 
-  const handleSend = () => {
+  const handleSend = async() => {
     if (!prompt.trim()) return;
+    const result=await axios.post("/api/agent/run",{
+        agentConfig: agent,
+        agentId: agent?.agentId,
+        input: prompt
+    })
+
+    console.log(result.data?.finalOutput)
 
     const userMessage = { id: Date.now(), role: "user", text: prompt.trim() };
     const followUp = {
       id: Date.now() + 1,
       role: "assistant",
-      text: "Absolutely — I can help you organize today’s priorities and build a focused task plan.",
+      text: result.data?.finalOutput,
     };
 
     setMessages((prev) => [...prev, userMessage, followUp]);
@@ -133,7 +287,7 @@ const AgentChatDrawer = ({ agent, open = false, onOpenChange }: Props) => {
                         )}
 
                         {isAssistant && (
-                          <div className="flex max-w-[86%] items-end gap-3">
+                          <div className="flex max-w-[86%] min-w-0 items-end gap-3">
                             {agent?.agentImage ? (
                               <Image
                                 src={agent.agentImage}
@@ -148,8 +302,8 @@ const AgentChatDrawer = ({ agent, open = false, onOpenChange }: Props) => {
                                 <div className="h-4 w-4 rounded-[4px] bg-[#3bb7b0]" />
                               </div>
                             )}
-                            <div className="rounded-[18px] rounded-bl-[8px] bg-[#eef0ef] px-4 py-3 text-[14px] leading-5 text-[#1d1d1d] shadow-sm">
-                              {message.text}
+                            <div className="min-w-0 rounded-[18px] rounded-bl-[8px] bg-[#eef0ef] px-4 py-3 text-[14px] leading-5 text-[#1d1d1d] shadow-sm">
+                              <MarkdownMessage text={String(message.text ?? "")} />
                             </div>
                           </div>
                         )}
