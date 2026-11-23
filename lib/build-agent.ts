@@ -2,6 +2,7 @@ import { CreatedAgentType } from "@/components/custom/agents/CreateAgent";
 import { getOrCreateAgentSession } from "./get-agent-composio-agent-session";
 import { Agent, setDefaultModelProvider } from "@openai/agents";
 import { OpenAIProvider } from "@openai/agents-openai";
+import { browserbaseResearchTool } from "./browserbase-tool";
 
 const defaultModel = process.env.OPENROUTER_MODEL ?? "openai/gpt-4o-mini";
 
@@ -37,9 +38,23 @@ export async function buildAgent(agentConfig:CreatedAgentType,
      Skills:
      ${agentConfig.skills??[].join(', ')},
 
+     **Response Rendering Rules:**
 
-     Required Output Format:
-     ${agentConfig.outputFormat}
+- Use the configured output format for normal text answers: ${agentConfig.outputFormat}.
+- When the user asks for UI, UX, layout, HTML, a component, or a page, provide a complete and functional implementation.
+- Put the complete HTML snippet inside one fenced html code block.
+- For visual UI responses, do not return Markdown-only content. You must provide the actual HTML implementation so the user can see the visual result.
+- Inline CSS inside a <style> tag is allowed and recommended for creating polished, self-contained UI designs.
+
+**Browser Research Rules:**
+
+- Use browser_research when the user explicitly asks to search or browse the internet.
+- Use browser_research for current prices, availability, comparisons, news, and other time-sensitive information.
+- Do not claim that pricing is current unless browser_research verified it.
+- Include the source URLs returned by browser_research in the final answer.
+- Clearly distinguish verified facts from conclusions or recommendations.
+- Browser research is read-only. Never use it to purchase, log in, submit forms, upload files, download files, or modify external systems.
+
 
      Use only the available tools when needed.
      Do not claim that an action succeeded unless the tool result confirms it.
@@ -54,6 +69,6 @@ export async function buildAgent(agentConfig:CreatedAgentType,
         name: agentConfig.name,
         model,
         instructions,
-        tools:[...composioTools,browserbase_tools]
+        tools:[...composioTools,browserbaseResearchTool]
     })
 }
